@@ -27,8 +27,11 @@ export async function POST(req: Request) {
 
     console.log('User saved successfully')
     return NextResponse.json({ message: 'User saved successfully' })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error saving user:', error)
-    return NextResponse.json({ message: 'Error saving user', error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { message: 'Error saving user', error: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
   }
 }
