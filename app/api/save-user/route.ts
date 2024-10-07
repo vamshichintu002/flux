@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/utils/supabase-admin'
+import fetch from 'node-fetch'
 
 export async function POST(req: Request) {
   const { id, email } = await req.json()
