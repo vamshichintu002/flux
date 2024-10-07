@@ -1,29 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { supabase } from '@/lib/supabaseClient'
-import { getImages } from '@/lib/supabase'
+import { supabase, getImages } from '@/lib/supabase'
+import Image from 'next/image';
+
+interface GeneratedImage {
+  id: string;
+  image_url: string;
+  prompt: string;
+}
 
 export default function ImageGenerator() {
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [history, setHistory] = useState<any[]>([])
+  const [images, setImages] = useState<GeneratedImage[]>([])
   const { user } = useUser()
+
+  const fetchHistory = useCallback(async () => {
+    if (user) {
+      const fetchedImages = await getImages(user.id)
+      setImages(fetchedImages)
+    }
+  }, [user])
 
   useEffect(() => {
     if (user) {
       fetchHistory()
     }
-  }, [user])
-
-  const fetchHistory = async () => {
-    if (user) {
-      const images = await getImages(user.id)
-      setHistory(images)
-    }
-  }
+  }, [user, fetchHistory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,7 +67,7 @@ export default function ImageGenerator() {
         const filename = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`
 
         // Upload the image to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('generated-images')
           .upload(`${user.id}/${filename}`, blob, {
             contentType: 'image/jpeg'
@@ -138,7 +144,7 @@ export default function ImageGenerator() {
       {imageUrl && (
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Generated Image</h2>
-          <img src={imageUrl} alt="Generated image" className="w-full rounded-md shadow-lg" />
+          <Image src={imageUrl} alt="Generated image" width={300} height={200} />
           <a
             href={imageUrl}
             download="generated-image.jpg"
@@ -151,9 +157,9 @@ export default function ImageGenerator() {
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-4">Your Generated Images</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {history.map((image) => (
+          {images.map((image) => (
             <div key={image.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <img src={image.image_url} alt={image.prompt} className="w-full h-48 object-cover" />
+              <Image src={image.image_url} alt={image.prompt} width={300} height={200} />
               <div className="p-4">
                 <p className="text-sm text-gray-600 truncate">{image.prompt}</p>
                 <a

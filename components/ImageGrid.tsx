@@ -1,28 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { getImages } from '@/lib/supabase'
+import Image from 'next/image'
+
+interface GeneratedImage {
+  id: string;
+  image_url: string;
+  prompt: string;
+}
 
 export default function ImageGrid() {
-  const [images, setImages] = useState<any[]>([])
+  const [images, setImages] = useState<GeneratedImage[]>([])
   const [showUserImages, setShowUserImages] = useState(false)
   const { user, isLoaded } = useUser()
 
-  useEffect(() => {
-    if (isLoaded) {
-      fetchImages()
-    }
-  }, [showUserImages, user, isLoaded])
-
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       const data = await getImages(showUserImages ? user?.id : undefined)
       setImages(data)
     } catch (error) {
       console.error('Error fetching images:', error)
     }
-  }
+  }, [showUserImages, user])
+
+  useEffect(() => {
+    if (isLoaded) {
+      fetchImages()
+    }
+  }, [isLoaded, fetchImages])
 
   return (
     <div>
@@ -38,7 +45,7 @@ export default function ImageGrid() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {images.map((image) => (
           <div key={image.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <img src={image.image_url} alt={image.prompt} className="w-full h-48 object-cover" />
+            <Image src={image.image_url} alt={image.prompt} width={300} height={192} className="w-full h-48 object-cover" />
             <div className="p-4">
               <p className="text-sm text-gray-600 truncate">{image.prompt}</p>
               <a

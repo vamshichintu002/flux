@@ -1,5 +1,10 @@
-import { supabase } from './supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 import { supabaseAdmin } from '@/utils/supabase-admin'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export async function storeImage(imageUrl: string, prompt: string, userId: string) {
   const { data, error } = await supabaseAdmin
@@ -17,22 +22,19 @@ export async function storeImage(imageUrl: string, prompt: string, userId: strin
 }
 
 export async function getImages(userId?: string) {
-  let query = supabase
-    .from('generated_images')
-    .select('*')
-    .order('created_at', { ascending: false })
-
+  let query = supabase.from('generated_images').select('*')
+  
   if (userId) {
     query = query.eq('user_id', userId)
   }
-
-  const { data, error } = await query
-
+  
+  const { data, error } = await query.order('created_at', { ascending: false })
+  
   if (error) {
     console.error('Error fetching images:', error)
-    throw error
+    return []
   }
-
+  
   return data
 }
 

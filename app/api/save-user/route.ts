@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   console.log('Attempting to save user:', { id, email })
 
   try {
-    const { data, error } = await supabaseAdmin
+    const { error } = await supabaseAdmin
       .from('users')
       .upsert(
         { 
